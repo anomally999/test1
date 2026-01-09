@@ -15,6 +15,9 @@ import ast
 import sys
 import traceback
 from contextlib import contextmanager
+from threading import Thread
+import flask
+
 # ---------- ENVIRONMENT ----------
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -2352,4 +2355,115 @@ async def on_ready():
     try:
         print(f'⚔️ Medieval Moderator Bot hath awakened as {bot.user} (ID: {bot.user.id})')
         print('🎯 Enhanced pillory system ready for dramatic public shaming!')
-        print('📜 Royal
+        print('📜 Royal Chronicle system activated!')
+        print('⚖️ Comprehensive moderation tools loaded!')
+        print('🔗 Slash commands loaded!')
+        print('📖 Comprehensive help command with ALL commands!')
+        print('👑 Royal Seal image integrated for all proclamations!')
+        print('------')
+        # Sync slash commands
+        try:
+            synced = await tree.sync()
+            print(f"✅ Synced {len(synced)} slash commands")
+        except Exception as e:
+            print(f"❌ Failed to sync slash commands: {e}")
+        # Start background tasks
+        if not check_pillories.is_running():
+            check_pillories.start()
+    except Exception as e:
+        print(f"Error in on_ready: {e}")
+# ---------- MESSAGE STORAGE ----------
+@bot.event
+async def on_message(message):
+    """Store messages for logging"""
+    if not message.author.bot and message.guild:
+        store_message(message)
+    await bot.process_commands(message)
+# ---------- ENHANCED ERROR HANDLER ----------
+@bot.event
+async def on_command_error(ctx, error):
+    """Comprehensive error handling with detailed feedback"""
+    if isinstance(error, commands.CommandNotFound):
+        return
+    # Handle specific errors with detailed messages
+    if isinstance(error, commands.MissingPermissions):
+        missing_perms = ", ".join(error.missing_permissions)
+        await ctx.send(embed=medieval_response(
+            f"🚫 Thou lacketh these royal permissions: {missing_perms}",
+            success=False
+        ))
+    elif isinstance(error, commands.NoPrivateMessage):
+        await ctx.send(embed=medieval_response(
+            "⚠️ This command may not be used in private chambers!",
+            success=False
+        ))
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(embed=medieval_response(
+            f"Thou hast forgotten the '{error.param.name}' argument!",
+            success=False
+        ))
+    elif isinstance(error, commands.BadArgument):
+        await ctx.send(embed=medieval_response(
+            f"Thy argument is flawed: {str(error)}",
+            success=False
+        ))
+    elif isinstance(error, commands.MemberNotFound):
+        await ctx.send(embed=medieval_response(
+            f"I couldst not find the member '{error.argument}'!",
+            success=False
+        ))
+    elif isinstance(error, commands.CommandInvokeError):
+        # Log the actual error for debugging
+        print(f"Command error in {ctx.command}: {error.original}")
+        traceback.print_exception(type(error.original), error.original, error.original.__traceback__)
+        await ctx.send(embed=medieval_response(
+            "An ill omen befell the royal guards! Check the console for details.",
+            success=False
+        ))
+    else:
+        # Log unhandled errors
+        print(f"Unhandled error in command {ctx.command}: {type(error).__name__}: {error}")
+        traceback.print_exception(type(error), error, error.__traceback__)
+        await ctx.send(embed=medieval_response(
+            "An unforeseen calamity hath occurred! The royal scribes have been notified.",
+            success=False
+        ))
+@tree.error
+async def on_app_command_error(interaction: discord.Interaction, error):
+    """Enhanced slash command error handling"""
+    if isinstance(error, app_commands.MissingPermissions):
+        await interaction.response.send_message(
+            "🚫 Thou lacketh the royal permissions for this command!",
+            ephemeral=True
+        )
+    elif isinstance(error, app_commands.CommandInvokeError):
+        print(f"Slash command error: {error.original}")
+        traceback.print_exception(type(error.original), error.original, error.original.__traceback__)
+        await interaction.response.send_message(
+            "An ill omen befell the royal guards! Check the console for details.",
+            ephemeral=True
+        )
+    else:
+        print(f"Unhandled slash command error: {type(error).__name__}: {error}")
+        await interaction.response.send_message(
+            "An unforeseen calamity hath occurred!",
+            ephemeral=True
+        )
+# ---------- RUN ----------
+app = flask.Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Bot is alive! 🏰 Medieval Moderator running."
+
+def run_flask():
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
+
+if __name__ == "__main__":
+    try:
+        init_db()
+        print("⚔️ Initializing Medieval Moderator Bot with Full Logging...")
+        print("🎯 Dramatic pillory system ready!")
+        print("📜 Royal Chronicle system activated!")
+        print("⚖️ Comprehensive moderation tools loaded!")
+        print("
