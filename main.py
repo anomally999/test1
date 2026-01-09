@@ -22,10 +22,10 @@ import flask
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 PREFIX = os.getenv("PREFIX", "!")
-DB_NAME = os.getenv("DB_PATH", "medieval_moderator.db")  # Made configurable for persistent storage on Render
+DB_NAME = os.getenv("DB_PATH", "medieval_moderator.db")
+
 # ---------- ROYAL SEAL IMAGE ----------
-ROYAL_SEAL_URL = "https://imgs.search.brave.com/ybyUdUFEw0dNXKCLGu2FuNAlJpvCTxkjXZUxOSFKcMM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly90aHVt/YnMuZHJlYW1zdGlt/ZS5jb20vYi9yb3lh/bC1kZWNyZWUtdW52/ZWlsZWQtZXhxdWlz/aXRlLWdvbGQtc2Vh/bC12aW50YWdlLXN0/YXRpb25lcnktaGFu/ZHdyaXR0ZW4tbGV0/dGVyLWV4cGxvcmUt/b3B1bGVuY2UtcmVn/YWwtc3RlcC1iYWNr/LTM1MTI2NjUwOC5q/cGc"
-# ---------- DATABASE CONNECTION MANAGER ----------
+ROYAL_SEAL_URL = "https://imgs.search.brave.com/ybyUdUFEw0dNXKCLGu2FuNAlJpvCTxkjXZUxOSFKcMM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly90aHVt/YnMuZHJlYW1zdGlt/ZS5jb20vYi9yb3lh/bC1kZWNyZWUtdW52/ZWlsZWQtZXhxdWlz/aXRlLWdvbGQtc2Vh/bC12aW50YWdlLXN0/YXRpb25lcnktaGFu/ZHdyaXR0ZW4tbGV0/dGVyLWV4cGxvcmUt/b3B1bGVuY2UtcmVn/YWwtc3RlcC1iYWNr/LTM1MTI2NjUwOC5q/cGc"# ---------- DATABASE CONNECTION MANAGER ----------
 @contextmanager
 def get_db_connection():
     """Context manager for database connections to prevent race conditions"""
@@ -2457,7 +2457,7 @@ def home():
     return "Bot is alive! 🏰 Medieval Moderator running."
 
 def run_flask():
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
 
 if __name__ == "__main__":
     try:
@@ -2466,4 +2466,16 @@ if __name__ == "__main__":
         print("🎯 Dramatic pillory system ready!")
         print("📜 Royal Chronicle system activated!")
         print("⚖️ Comprehensive moderation tools loaded!")
-        print("
+        print("🔗 Slash commands loaded!")
+        print("📖 Comprehensive help command with ALL commands!")
+        print("👑 Royal Seal image integrated for all proclamations!")
+        print("🏰 Starting Flask keep-alive server and Discord bot...")
+
+        # Start Flask in a separate thread
+        Thread(target=run_flask, daemon=True).start()
+
+        # Start the Discord bot
+        bot.run(TOKEN)
+    except Exception as e:
+        print(f"Failed to start bot: {e}")
+        traceback.print_exc()
