@@ -1,3 +1,4 @@
+
 import os
 import random
 import sqlite3
@@ -17,24 +18,15 @@ import traceback
 from contextlib import contextmanager
 from threading import Thread
 import flask
-import aiofiles
-import mimetypes
-from pathlib import Path
 
 # ---------- ENVIRONMENT ----------
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 PREFIX = os.getenv("PREFIX", "!")
 DB_NAME = os.getenv("DB_PATH", "medieval_moderator.db")
-MEDIA_FOLDER = os.getenv("MEDIA_FOLDER", "deleted_media")
-
-# Create media folder if it doesn't exist
-Path(MEDIA_FOLDER).mkdir(exist_ok=True)
 
 # ---------- ROYAL SEAL IMAGE ----------
-ROYAL_SEAL_URL = "https://imgs.search.brave.com/ybyUdUFEw0dNXKCLGu2FuNAlJpvCTxkjXZUxOSFKcMM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly90aHVt/YnMuZHJlYW1zdGlt/ZS5jb20vYi9yb3lh/bC1kZWNyZWUtdW52/ZWlsZWQtZXhxdWlz/aXRlLWdvbGQtc2Vh/bC12aW50YWdlLXN0/YXRpb25lcnktaGFu/ZHdyaXR0ZW4tbGV0/dGVyLWV4cGxvcmUt/b3B1bGVuY2UtcmVn/YWwtc3RlcC1iYWNr/LTM1MTI2NjUwOC5q/cGc"
-
-# ---------- DATABASE CONNECTION MANAGER ----------
+ROYAL_SEAL_URL = "https://imgs.search.brave.com/ybyUdUFEw0dNXKCLGu2FuNAlJpvCTxkjXZUxOSFKcMM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly90aHVt/YnMuZHJlYW1zdGlt/ZS5jb20vYi9yb3lh/bC1kZWNyZWUtdW52/ZWlsZWQtZXhxdWlz/aXRlLWdvbGQtc2Vh/bC12aW50YWdlLXN0/YXRpb25lcnktaGFu/ZHdyaXR0ZW4tbGV0/dGVyLWV4cGxvcmUt/b3B1bGVuY2UtcmVn/YWwtc3RlcC1iYWNr/LTM1MTI2NjUwOC5q/cGc"# ---------- DATABASE CONNECTION MANAGER ----------
 @contextmanager
 def get_db_connection():
     """Context manager for database connections to prevent race conditions"""
@@ -52,83 +44,6 @@ def get_db_connection():
     finally:
         if conn:
             conn.close()
-
-# ---------- MEDIA STORAGE FUNCTIONS ----------
-async def save_media_file(attachment, guild_id, message_id):
-    """Save media file to local storage and return file path"""
-    try:
-        # Determine file extension
-        file_ext = Path(attachment.filename).suffix.lower()
-        if not file_ext:
-            # Try to get extension from content type
-            if attachment.content_type:
-                ext = mimetypes.guess_extension(attachment.content_type.split(';')[0])
-                if ext:
-                    file_ext = ext
-        
-        # Create guild-specific folder
-        guild_folder = Path(MEDIA_FOLDER) / str(guild_id)
-        guild_folder.mkdir(exist_ok=True)
-        
-        # Generate unique filename
-        timestamp = dt.now().strftime("%Y%m%d_%H%M%S")
-        safe_filename = re.sub(r'[^\w\-_\.]', '_', attachment.filename)
-        file_path = guild_folder / f"{message_id}_{timestamp}_{safe_filename}"
-        
-        # Download and save the file
-        async with aiohttp.ClientSession() as session:
-            async with session.get(attachment.url) as resp:
-                if resp.status == 200:
-                    async with aiofiles.open(file_path, 'wb') as f:
-                        async for chunk in resp.content.iter_chunked(8192):
-                            await f.write(chunk)
-        
-        return str(file_path.relative_to(MEDIA_FOLDER))
-    except Exception as e:
-        print(f"Error saving media file: {e}")
-        return None
-
-def is_media_file(filename, content_type=None):
-    """Check if file is a video or image"""
-    image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'}
-    video_extensions = {'.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv', '.m4v'}
-    
-    ext = Path(filename).suffix.lower()
-    
-    # Check by extension
-    if ext in image_extensions or ext in video_extensions:
-        return True
-    
-    # Check by content type
-    if content_type:
-        content_type = content_type.lower()
-        if any(media_type in content_type for media_type in ['image/', 'video/', 'photo']):
-            return True
-    
-    return False
-
-def get_media_files_info(attachments):
-    """Get information about media files in attachments"""
-    media_files = []
-    for att in attachments:
-        if is_media_file(att.filename, getattr(att, 'content_type', None)):
-            media_files.append({
-                "filename": att.filename,
-                "size": att.size,
-                "content_type": getattr(att, 'content_type', None),
-                "url": att.url,
-                "is_media": True
-            })
-        else:
-            media_files.append({
-                "filename": att.filename,
-                "size": att.size,
-                "content_type": getattr(att, 'content_type', None),
-                "url": att.url,
-                "is_media": False
-            })
-    return media_files
-
 # ---------- MEDIEVAL FLAIR ----------
 MEDIEVAL_COLORS = {
     "gold": discord.Colour.gold(),
@@ -141,7 +56,6 @@ MEDIEVAL_COLORS = {
     "blurple": discord.Colour.blurple(),
     "yellow": discord.Colour.yellow(),
 }
-
 MEDIEVAL_PREFIXES = [
     "Hark!", "Verily,", "By mine honour,", "Prithee,", "Forsooth,", "Hear ye, hear ye!",
     "Lo and behold,", "By mine troth,", "Marry,", "Gadzooks!", "Zounds!", "By the saints,",
@@ -149,20 +63,17 @@ MEDIEVAL_PREFIXES = [
     "Good my lord,", "Noble sir,", "Fair lady,", "By the mass,", "Gramercy,", "Well met,",
     "God ye good den,", "What ho!", "Avaunt!", "By cock and pie,", "Odds bodikins!",
 ]
-
 MEDIEVAL_SUFFIXES = [
     "m'lord.", "good sir.", "fair maiden.", "noble knight.", "worthy peasant.", "gentle soul.",
     "brave warrior.", "wise sage.", "royal subject.", "courtier.", "squire.", "yeoman.",
     "varlet.", "knave.", "villager.", "my liege.", "thou valiant soul.", "thou stout yeoman.",
     "thou gracious dame.", "as the saints bear witness.", "upon mine honour.", "by the Virgin's grace.",
 ]
-
 MEDIEVAL_GREETINGS = [
     "Hail, good traveler!", "Well met in these fair lands!", "God's greeting to thee!",
     "May fortune favor thee this day!", "A joyous day to thee, wanderer!",
     "The realm welcomes thy presence!", "Blessings upon thee, wayfarer!",
 ]
-
 # MEDIEVAL LOG MESSAGES
 LOG_MESSAGES = {
     "message_edit": [
@@ -211,7 +122,6 @@ LOG_MESSAGES = {
         "👑 **RANK DIMINISHED** 👑\n{role} is removed from {user}!"
     ]
 }
-
 # PILLORY MESSAGES - Enhanced with Royal Decree formatting and Royal Seal
 PILLORY_SHAME_MESSAGES = [
     """👑 **ROYAL DECREE OF PUBLIC SHAME** 👑
@@ -249,7 +159,6 @@ PILLORY_SHAME_MESSAGES = [
     *Let this be carved in the annals of the realm's history!*
     **THIS DECREE IS LAW!** 📜"""
 ]
-
 PILLORY_UPDATE_MESSAGES = [
     """⏰ **CHRONICLE OF CONTINUING SHAME** ⏰
     @here
@@ -270,7 +179,6 @@ PILLORY_UPDATE_MESSAGES = [
     *Time moves slowly when justice demands its due!*
     **THE CROWN IS WATCHING!** 👁️"""
 ]
-
 PILLORY_INSULTS_EXTENDED = [
     "Such shame! Even the village fool covers his eyes in embarrassment!",
     "The gods themselves weep at such pitiful display of character!",
@@ -283,7 +191,6 @@ PILLORY_INSULTS_EXTENDED = [
     "The church bells toll in mourning for this soul's reputation!",
     "Even the dogs refuse to bark in the presence of such shame!"
 ]
-
 # CHANNEL LOCK MESSAGES - Enhanced Royal Decree format
 MEDIEVAL_LOCK_MESSAGES = [
     """🔒 **ROYAL DECREE - CHAMBER SEALED** 🔒
@@ -305,7 +212,6 @@ MEDIEVAL_LOCK_MESSAGES = [
     *May wisdom come to those who would break the peace!*
     **BY ORDER OF THE REALM!** 🏰"""
 ]
-
 MEDIEVAL_UNLOCK_MESSAGES = [
     """🔓 **ROYAL DECREE - CHAMBER RESTORED** 🔓
     **BY THE MERCY AND WISDOM OF THE CROWN**
@@ -326,16 +232,12 @@ MEDIEVAL_UNLOCK_MESSAGES = [
     *The Crown's mercy is great, but justice is always watching!*
     **DISCOURSE IS RESTORED!** 📜"""
 ]
-
 def get_medieval_prefix():
     return random.choice(MEDIEVAL_PREFIXES)
-
 def get_medieval_suffix():
     return random.choice(MEDIEVAL_SUFFIXES) if random.random() > 0.4 else ""
-
 def medieval_greeting():
     return random.choice(MEDIEVAL_GREETINGS)
-
 def medieval_embed(title="", description="", color_name="gold", thumbnail_url=None):
     color = MEDIEVAL_COLORS.get(color_name, MEDIEVAL_COLORS["gold"])
     embed = discord.Embed(
@@ -351,7 +253,6 @@ def medieval_embed(title="", description="", color_name="gold", thumbnail_url=No
         embed.set_thumbnail(url=ROYAL_SEAL_URL)
     embed.set_footer(text="By royal decree of the realm")
     return embed
-
 def medieval_response(message, success=True, extra=""):
     prefix = get_medieval_prefix()
     suffix = get_medieval_suffix()
@@ -360,7 +261,6 @@ def medieval_response(message, success=True, extra=""):
     if extra:
         full_message += f"\n\n{extra}"
     return medieval_embed(description=full_message, color_name=color)
-
 # ---------- BOT ----------
 intents = discord.Intents.default()
 intents.members = True
@@ -369,7 +269,6 @@ intents.moderation = True
 intents.guilds = True
 bot = commands.Bot(command_prefix=PREFIX, intents=intents, help_command=None, case_insensitive=True)
 tree = bot.tree
-
 # ---------- DATABASE ----------
 def init_db():
     """Initialize database with proper schema and error handling"""
@@ -391,7 +290,6 @@ def init_db():
             if 'log_channel' not in columns:
                 print("Adding missing 'log_channel' column to pillory_config table...")
                 db.execute("ALTER TABLE pillory_config ADD COLUMN log_channel INTEGER")
-            
             db.execute("""
             CREATE TABLE IF NOT EXISTS active_pillories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -402,7 +300,6 @@ def init_db():
                 reason TEXT,
                 active INTEGER DEFAULT 1
             )""")
-            
             # Moderation logs
             db.execute("""
             CREATE TABLE IF NOT EXISTS moderation_logs (
@@ -414,7 +311,6 @@ def init_db():
                 reason TEXT,
                 timestamp TEXT
             )""")
-            
             # Warning system
             db.execute("""
             CREATE TABLE IF NOT EXISTS warnings (
@@ -425,7 +321,6 @@ def init_db():
                 reason TEXT,
                 timestamp TEXT
             )""")
-            
             # Mute system
             db.execute("""
             CREATE TABLE IF NOT EXISTS mutes (
@@ -436,7 +331,6 @@ def init_db():
                 end_time TEXT,
                 active INTEGER DEFAULT 1
             )""")
-            
             # Channel locks system
             db.execute("""
             CREATE TABLE IF NOT EXISTS channel_locks (
@@ -449,7 +343,6 @@ def init_db():
                 timestamp TEXT,
                 active INTEGER DEFAULT 1
             )""")
-            
             # Message tracking for edits/deletes
             db.execute("""
             CREATE TABLE IF NOT EXISTS message_history (
@@ -462,40 +355,75 @@ def init_db():
                 attachments TEXT,
                 timestamp TEXT
             )""")
-            
             db.commit()
             print("✅ Database initialized successfully")
     except sqlite3.Error as e:
         print(f"❌ Database initialization error: {e}")
         raise
-
-# ---------- ENHANCED MESSAGE STORAGE ----------
+# ---------- PAGINATED HELP COMMAND ----------
+class HelpView(discord.ui.View):
+    def __init__(self, embeds, timeout=60.0):
+        super().__init__(timeout=timeout)
+        self.embeds = embeds
+        self.current_page = 0
+        self.update_buttons()
+    def update_buttons(self):
+        # Update button states
+        self.prev_button.disabled = self.current_page == 0
+        self.next_button.disabled = self.current_page == len(self.embeds) - 1
+    @discord.ui.button(label="⬅️ Previous", style=discord.ButtonStyle.blurple)
+    async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.current_page > 0:
+            self.current_page -= 1
+            self.update_buttons()
+            await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)
+    @discord.ui.button(label="➡️ Next", style=discord.ButtonStyle.blurple)
+    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.current_page < len(self.embeds) - 1:
+            self.current_page += 1
+            self.update_buttons()
+            await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)
+    @discord.ui.button(label="🗑️ Close", style=discord.ButtonStyle.red)
+    async def close_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.message.delete()
+# ---------- LOGGING FUNCTIONS ----------
+def get_log_channel(guild_id):
+    """Get the log channel for a guild with proper error handling"""
+    try:
+        with get_db_connection() as db:
+            row = db.execute("SELECT log_channel FROM pillory_config WHERE guild_id=?", (guild_id,)).fetchone()
+            return row[0] if row and row[0] else None
+    except sqlite3.Error as e:
+        print(f"Error getting log channel: {e}")
+        return None
+def set_log_channel(guild_id, channel_id):
+    """Set the log channel for a guild with upsert"""
+    try:
+        with get_db_connection() as db:
+            existing = db.execute("SELECT * FROM pillory_config WHERE guild_id=?", (guild_id,)).fetchone()
+            if existing:
+                db.execute("UPDATE pillory_config SET log_channel=? WHERE guild_id=?", (channel_id, guild_id))
+            else:
+                db.execute("INSERT INTO pillory_config (guild_id, log_channel) VALUES (?,?)", (guild_id, channel_id))
+            db.commit()
+        print(f"✅ Log channel set to {channel_id} for guild {guild_id}")
+    except sqlite3.Error as e:
+        print(f"❌ Error setting log channel: {e}")
+        raise
 def store_message(message):
-    """Store message content for edit/delete tracking with media file handling"""
+    """Store message content for edit/delete tracking with proper error handling"""
     if not message.guild or message.author.bot:
         return
-    
     try:
         attachments = []
-        media_files = []
-        
         if message.attachments:
             for att in message.attachments:
-                attachment_info = {
+                attachments.append({
                     "url": att.url,
                     "filename": att.filename,
                     "size": att.size,
-                    "content_type": getattr(att, 'content_type', None),
-                    "is_media": is_media_file(att.filename, getattr(att, 'content_type', None))
-                }
-                
-                # Save media files locally
-                if attachment_info["is_media"]:
-                    saved_path = asyncio.create_task(save_media_file(att, message.guild.id, message.id))
-                    attachment_info["saved_path"] = saved_path
-                
-                attachments.append(attachment_info)
-        
+                    "content_type": getattr(att, 'content_type', None)
+                })
         with get_db_connection() as db:
             db.execute("""
             INSERT INTO message_history (guild_id, channel_id, message_id, user_id, content, attachments, timestamp)
@@ -512,7 +440,6 @@ def store_message(message):
             db.commit()
     except Exception as e:
         print(f"Error storing message: {e}")
-
 def get_message_history(message_id):
     """Get stored message data"""
     try:
@@ -525,12 +452,10 @@ def get_message_history(message_id):
     except Exception as e:
         print(f"Error getting message history: {e}")
         return None
-
-def format_attachments_with_media(attachments_str, guild_id):
-    """Format attachment data for display, including media file info"""
+def format_attachments(attachments_str):
+    """Format attachment data for display"""
     if not attachments_str:
         return ""
-    
     try:
         attachments = ast.literal_eval(attachments_str)
         if attachments:
@@ -538,125 +463,12 @@ def format_attachments_with_media(attachments_str, guild_id):
             for att in attachments:
                 size_kb = att['size'] / 1024 if att.get('size') else 0
                 content_type = att.get('content_type', '')
-                
-                # Determine emoji based on file type
-                if att.get('is_media', False):
-                    if any(img in content_type.lower() for img in ['image', 'photo', 'jpeg', 'png', 'gif']):
-                        emoji = "🖼️"
-                    elif any(vid in content_type.lower() for vid in ['video', 'mp4', 'avi', 'mov']):
-                        emoji = "🎥"
-                    else:
-                        emoji = "📁"
-                else:
-                    emoji = "📎"
-                
-                # Add saved path info if available
-                saved_info = ""
-                if att.get('saved_path') and att.get('is_media'):
-                    saved_info = " *(saved)*"
-                
-                files.append(f"{emoji} `{att['filename']}` ({size_kb:.1f}KB){saved_info}")
+                emoji = "🖼️" if any(img in content_type.lower() for img in ['image', 'photo', 'jpeg', 'png', 'gif']) else "📎"
+                files.append(f"{emoji} `{att['filename']}` ({size_kb:.1f}KB)")
             return "\n".join(files)
     except Exception as e:
         print(f"Error formatting attachments: {e}")
     return ""
-
-async def send_media_log_embed(guild, media_files, author, channel, action_type="deleted"):
-    """Send special embed for media file deletions"""
-    try:
-        log_channel_id = get_log_channel(guild.id)
-        if not log_channel_id:
-            return False
-        
-        log_channel = guild.get_channel(log_channel_id)
-        if not log_channel:
-            return False
-        
-        # Create media-specific embed
-        embed = medieval_embed(
-            title=f"{'🎥' if any('video' in str(f.get('content_type', '')).lower() for f in media_files) else '🖼️'} Media File {action_type.title()}",
-            description=f"A media file was {action_type} by {author.mention} in {channel.mention}",
-            color_name="red" if action_type == "deleted" else "yellow"
-        )
-        
-        # Add media file details
-        for i, media_file in enumerate(media_files[:4]):  # Show max 4 files
-            content_type = media_file.get('content_type', 'Unknown')
-            size_mb = media_file.get('size', 0) / (1024 * 1024)
-            
-            embed.add_field(
-                name=f"File {i+1}: {media_file['filename']}",
-                value=f"Type: {content_type}\nSize: {size_mb:.2f} MB",
-                inline=True
-            )
-        
-        embed.set_thumbnail(url=str(author.avatar.url) if author.avatar else None)
-        embed.set_footer(text=f"Server: {guild.name} | Media files are saved locally for review")
-        
-        await log_channel.send(embed=embed)
-        return True
-        
-    except Exception as e:
-        print(f"Error sending media log embed: {e}")
-        return False
-
-# ---------- PAGINATED HELP COMMAND ----------
-class HelpView(discord.ui.View):
-    def __init__(self, embeds, timeout=60.0):
-        super().__init__(timeout=timeout)
-        self.embeds = embeds
-        self.current_page = 0
-        self.update_buttons()
-    
-    def update_buttons(self):
-        # Update button states
-        self.prev_button.disabled = self.current_page == 0
-        self.next_button.disabled = self.current_page == len(self.embeds) - 1
-    
-    @discord.ui.button(label="⬅️ Previous", style=discord.ButtonStyle.blurple)
-    async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if self.current_page > 0:
-            self.current_page -= 1
-            self.update_buttons()
-            await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)
-    
-    @discord.ui.button(label="➡️ Next", style=discord.ButtonStyle.blurple)
-    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if self.current_page < len(self.embeds) - 1:
-            self.current_page += 1
-            self.update_buttons()
-            await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)
-    
-    @discord.ui.button(label="🗑️ Close", style=discord.ButtonStyle.red)
-    async def close_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.message.delete()
-
-# ---------- LOGGING FUNCTIONS ----------
-def get_log_channel(guild_id):
-    """Get the log channel for a guild with proper error handling"""
-    try:
-        with get_db_connection() as db:
-            row = db.execute("SELECT log_channel FROM pillory_config WHERE guild_id=?", (guild_id,)).fetchone()
-            return row[0] if row and row[0] else None
-    except sqlite3.Error as e:
-        print(f"Error getting log channel: {e}")
-        return None
-
-def set_log_channel(guild_id, channel_id):
-    """Set the log channel for a guild with upsert"""
-    try:
-        with get_db_connection() as db:
-            existing = db.execute("SELECT * FROM pillory_config WHERE guild_id=?", (guild_id,)).fetchone()
-            if existing:
-                db.execute("UPDATE pillory_config SET log_channel=? WHERE guild_id=?", (channel_id, guild_id))
-            else:
-                db.execute("INSERT INTO pillory_config (guild_id, log_channel) VALUES (?,?)", (guild_id, channel_id))
-            db.commit()
-        print(f"✅ Log channel set to {channel_id} for guild {guild_id}")
-    except sqlite3.Error as e:
-        print(f"❌ Error setting log channel: {e}")
-        raise
-
 async def send_log_embed(guild, embed_type, title, description, fields=None, color="blue", thumbnail=None):
     """Send log embed to configured channel with enhanced validation"""
     if not guild:
@@ -691,7 +503,6 @@ async def send_log_embed(guild, embed_type, title, description, fields=None, col
     except Exception as e:
         print(f"❌ Error sending log: {e}")
         return False
-
 # ---------- PILLORY FUNCTIONS ----------
 def get_pillory_channel(guild_id):
     """Get the pillory channel for a guild"""
@@ -702,7 +513,6 @@ def get_pillory_channel(guild_id):
     except sqlite3.Error as e:
         print(f"Error getting pillory channel: {e}")
         return None
-
 def set_pillory_channel(guild_id, channel_id):
     """Set the pillory channel for a guild with upsert"""
     try:
@@ -716,7 +526,6 @@ def set_pillory_channel(guild_id, channel_id):
     except sqlite3.Error as e:
         print(f"Error setting pillory channel: {e}")
         raise
-
 def get_pillory_role(guild_id):
     """Get the pillory role for a guild"""
     try:
@@ -725,7 +534,6 @@ def get_pillory_role(guild_id):
             return row[0] if row and row[0] else None
     except sqlite3.Error:
         return None
-
 def set_pillory_role(guild_id, role_id):
     """Set the pillory role for a guild"""
     try:
@@ -739,7 +547,6 @@ def set_pillory_role(guild_id, role_id):
     except sqlite3.Error as e:
         print(f"Error setting pillory role: {e}")
         raise
-
 def get_pillory_bypass_roles(guild_id):
     """Get pillory bypass roles for a guild"""
     try:
@@ -748,7 +555,6 @@ def get_pillory_bypass_roles(guild_id):
             return row[0] if row and row[0] else None
     except sqlite3.Error:
         return None
-
 def set_pillory_bypass_roles(guild_id, role_ids):
     """Set pillory bypass roles for a guild"""
     try:
@@ -763,7 +569,6 @@ def set_pillory_bypass_roles(guild_id, role_ids):
     except sqlite3.Error as e:
         print(f"Error setting bypass roles: {e}")
         raise
-
 def get_pillory_allowed_roles(guild_id):
     """Get pillory allowed roles for a guild"""
     try:
@@ -772,7 +577,6 @@ def get_pillory_allowed_roles(guild_id):
             return row[0] if row and row[0] else None
     except sqlite3.Error:
         return None
-
 def set_pillory_allowed_roles(guild_id, role_ids):
     """Set pillory allowed roles for a guild"""
     try:
@@ -787,7 +591,6 @@ def set_pillory_allowed_roles(guild_id, role_ids):
     except sqlite3.Error as e:
         print(f"Error setting allowed roles: {e}")
         raise
-
 def can_use_pillory(guild_id, user_id):
     """Check if user can use pillory commands based on allowed roles"""
     try:
@@ -808,7 +611,6 @@ def can_use_pillory(guild_id, user_id):
     except Exception as e:
         print(f"Error checking pillory permissions: {e}")
         return True
-
 def has_pillory_bypass(guild_id, user_id):
     """Check if user has pillory bypass role"""
     try:
@@ -829,7 +631,6 @@ def has_pillory_bypass(guild_id, user_id):
     except Exception as e:
         print(f"Error checking bypass: {e}")
         return False
-
 def add_pillory(guild_id, user_id, duration_minutes, reason):
     """Add a new pillory with proper error handling"""
     try:
@@ -846,7 +647,6 @@ def add_pillory(guild_id, user_id, duration_minutes, reason):
     except Exception as e:
         print(f"Error adding pillory: {e}")
         return None
-
 def get_active_pillories(guild_id):
     """Get all active pillories for a guild"""
     try:
@@ -860,7 +660,6 @@ def get_active_pillories(guild_id):
     except Exception as e:
         print(f"Error getting active pillories: {e}")
         return []
-
 def end_pillory(pillory_id):
     """End a pillory by ID"""
     try:
@@ -869,7 +668,6 @@ def end_pillory(pillory_id):
             db.commit()
     except Exception as e:
         print(f"Error ending pillory: {e}")
-
 def is_user_pilloried(guild_id, user_id):
     """Check if user is currently pilloried"""
     try:
@@ -882,7 +680,6 @@ def is_user_pilloried(guild_id, user_id):
     except Exception as e:
         print(f"Error checking if user is pilloried: {e}")
         return None
-
 # ---------- MODERATION FUNCTIONS ----------
 def add_warning(guild_id, user_id, moderator_id, reason):
     """Add a warning with proper error handling"""
@@ -896,7 +693,6 @@ def add_warning(guild_id, user_id, moderator_id, reason):
     except Exception as e:
         print(f"Error adding warning: {e}")
         raise
-
 def get_warnings(guild_id, user_id):
     """Get warnings for a user"""
     try:
@@ -911,7 +707,6 @@ def get_warnings(guild_id, user_id):
     except Exception as e:
         print(f"Error getting warnings: {e}")
         return []
-
 def add_moderation_log(guild_id, moderator_id, target_id, action, reason):
     """Add moderation log entry"""
     try:
@@ -924,7 +719,6 @@ def add_moderation_log(guild_id, moderator_id, target_id, action, reason):
     except Exception as e:
         print(f"Error adding moderation log: {e}")
         raise
-
 # ---------- CHANNEL LOCK FUNCTIONS ----------
 def is_channel_locked(guild_id, channel_id):
     """Check if a channel is currently locked"""
@@ -938,7 +732,6 @@ def is_channel_locked(guild_id, channel_id):
     except Exception as e:
         print(f"Error checking if channel is locked: {e}")
         return None
-
 def lock_channel(guild_id, channel_id, moderator_id, reason):
     """Lock a channel and return lock ID"""
     try:
@@ -953,7 +746,6 @@ def lock_channel(guild_id, channel_id, moderator_id, reason):
     except Exception as e:
         print(f"Error locking channel: {e}")
         return None
-
 def unlock_channel(lock_id, reason):
     """Unlock a channel"""
     try:
@@ -962,7 +754,6 @@ def unlock_channel(lock_id, reason):
             db.commit()
     except Exception as e:
         print(f"Error unlocking channel: {e}")
-
 def get_locked_channels(guild_id):
     """Get all locked channels in a guild"""
     try:
@@ -977,7 +768,6 @@ def get_locked_channels(guild_id):
     except Exception as e:
         print(f"Error getting locked channels: {e}")
         return []
-
 # ---------- BACKGROUND TASKS ----------
 @tasks.loop(minutes=1)
 async def check_pillories():
@@ -1031,11 +821,9 @@ async def check_pillories():
             db.commit()
     except Exception as e:
         print(f"Error in check_pillories: {e}")
-
 @check_pillories.before_loop
 async def before_pillories():
     await bot.wait_until_ready()
-
 # ---------- ENHANCED LOGGING EVENT HANDLERS ----------
 @bot.event
 async def on_message_edit(before, after):
@@ -1074,52 +862,31 @@ async def on_message_edit(before, after):
         color="yellow",
         thumbnail=str(after.author.avatar.url) if after.author.avatar else None
     )
-
 @bot.event
 async def on_message_delete(message):
-    """Enhanced message deletion logging with media file handling"""
+    """Log message deletions with full detail"""
     if message.author.bot:
         return
     if not message.guild:
         return
-    
     # Get stored message data
     old_data = get_message_history(message.id)
     content = old_data[0] if old_data else message.content
     attachments_str = old_data[1] if old_data else None
-    
-    # Check for media files
-    media_files = []
-    if attachments_str:
-        try:
-            attachments = ast.literal_eval(attachments_str)
-            media_files = [att for att in attachments if att.get('is_media', False)]
-        except:
-            pass
-    elif message.attachments:
-        media_files = get_media_files_info(message.attachments)
-        media_files = [att for att in media_files if att['is_media']]
-    
-    # Send media-specific log if there are media files
-    if media_files:
-        await send_media_log_embed(message.guild, media_files, message.author, message.channel, "deleted")
-    
-    # Create standard log embed
+    # Create log embed
     fields = [
         ("👤 User", f"{message.author.mention} (`{message.author.id}`)", True),
         ("📺 Channel", f"{message.channel.mention} (`{message.channel.id}`)", True),
         ("📜 Content", f"```{content[:1000]}```" if len(content) <= 1000 else f"```{content[:997]}...```", False)
     ]
-    
-    # Handle attachments with media info
+    # Handle attachments
     if attachments_str:
-        attachment_info = format_attachments_with_media(attachments_str, message.guild.id)
+        attachment_info = format_attachments(attachments_str)
         if attachment_info:
             fields.append(("📎 Attachments", attachment_info, False))
     elif message.attachments:
         attachment_info = "\n".join([f"📎 `{att.filename}` ({att.size/1024:.1f}KB)" for att in message.attachments])
         fields.append(("📎 Attachments", attachment_info, False))
-    
     await send_log_embed(
         message.guild,
         "message_delete",
@@ -1132,7 +899,218 @@ async def on_message_delete(message):
         color="red",
         thumbnail=str(message.author.avatar.url) if message.author.avatar else None
     )
-
+@bot.event
+async def on_member_join(member):
+    """Log member joins with full detail"""
+    if member.bot:
+        return
+    created_date = f"<t:{int(member.created_at.timestamp())}:R>"
+    fields = [
+        ("👤 Member", f"{member.mention} (`{member.id}`)", True),
+        ("📅 Account Created", created_date, True),
+        ("📊 Total Members", f"{member.guild.member_count}", True)
+    ]
+    await send_log_embed(
+        member.guild,
+        "member_join",
+        "🚪 Traveler Arrives",
+        random.choice(LOG_MESSAGES["member_join"]).format(
+            user=member.mention,
+            created=created_date
+        ),
+        fields=fields,
+        color="green",
+        thumbnail=str(member.avatar.url) if member.avatar else None
+    )
+@bot.event
+async def on_member_remove(member):
+    """Log member leaves with full detail"""
+    if member.bot:
+        return
+    # Get join date if available
+    join_date = "Unknown"
+    if member.joined_at:
+        join_date = f"<t:{int(member.joined_at.timestamp())}:R>"
+    fields = [
+        ("👤 Member", f"{member.mention} (`{member.id}`)", True),
+        ("📅 Joined Server", join_date, True),
+        ("📊 Total Members", f"{member.guild.member_count}", True)
+    ]
+    await send_log_embed(
+        member.guild,
+        "member_leave",
+        "👋 Soul Departs",
+        random.choice(LOG_MESSAGES["member_leave"]).format(user=member.mention),
+        fields=fields,
+        color="orange",
+        thumbnail=str(member.avatar.url) if member.avatar else None
+    )
+@bot.event
+async def on_user_update(before, after):
+    """Log user profile changes (avatar, banner, etc.)"""
+    # Avatar changes
+    if before.avatar != after.avatar:
+        for guild in bot.guilds:
+            member = guild.get_member(before.id)
+            if member and not member.bot:
+                await send_log_embed(
+                    guild,
+                    "avatar_change",
+                    "🎭 Visage Altered",
+                    random.choice(LOG_MESSAGES["avatar_change"]).format(user=member.mention),
+                    fields=[("👤 User", f"{member.mention} (`{member.id}`)", True)],
+                    color="purple",
+                    thumbnail=str(after.avatar.url) if after.avatar else None
+                )
+    # Banner changes (if available)
+    if hasattr(before, 'banner') and hasattr(after, 'banner') and before.banner != after.banner:
+        for guild in bot.guilds:
+            member = guild.get_member(before.id)
+            if member and not member.bot:
+                await send_log_embed(
+                    guild,
+                    "banner_change",
+                    "🏰 Standard Updated",
+                    random.choice(LOG_MESSAGES["banner_change"]).format(user=member.mention),
+                    fields=[("👤 User", f"{member.mention} (`{member.id}`)", True)],
+                    color="blue",
+                    thumbnail=str(after.avatar.url) if after.avatar else None
+                )
+@bot.event
+async def on_member_update(before, after):
+    """Log member updates (nickname, roles, etc.)"""
+    if before.bot:
+        return
+    # Nickname changes
+    if before.nick != after.nick:
+        fields = [
+            ("👤 Member", f"{before.mention} (`{before.id}`)", True),
+            ("📜 Before", f"`{before.nick}`" if before.nick else "`None`", True),
+            ("📝 After", f"`{after.nick}`" if after.nick else "`None`", True)
+        ]
+        await send_log_embed(
+            before.guild,
+            "nickname_change",
+            "📜 Name Amended",
+            random.choice(LOG_MESSAGES["nickname_change"]).format(
+                user=before.mention,
+                after=after.nick or before.name
+            ),
+            fields=fields,
+            color="yellow",
+            thumbnail=str(after.avatar.url) if after.avatar else None
+        )
+    # Role changes
+    added_roles = [role for role in after.roles if role not in before.roles and not role.is_default()]
+    removed_roles = [role for role in before.roles if role not in after.roles and not role.is_default()]
+    # Role additions
+    for role in added_roles:
+        fields = [
+            ("👤 Member", f"{after.mention} (`{after.id}`)", True),
+            ("⚔️ Role", f"{role.mention} (`{role.id}`)", True),
+            ("📊 Color", f"#{role.color.value:06x}" if role.color.value else "None", True)
+        ]
+        await send_log_embed(
+            after.guild,
+            "role_add",
+            "⚔️ Honor Bestowed",
+            random.choice(LOG_MESSAGES["role_add"]).format(
+                user=after.mention,
+                role=role.mention
+            ),
+            fields=fields,
+            color="green",
+            thumbnail=str(after.avatar.url) if after.avatar else None
+        )
+    # Role removals
+    for role in removed_roles:
+        fields = [
+            ("👤 Member", f"{after.mention} (`{after.id}`)", True),
+            ("🗡️ Role", f"{role.mention} (`{role.id}`)", True),
+            ("📊 Color", f"#{role.color.value:06x}" if role.color.value else "None", True)
+        ]
+        await send_log_embed(
+            after.guild,
+            "role_remove",
+            "🗡️ Honor Stripped",
+            random.choice(LOG_MESSAGES["role_remove"]).format(
+                user=after.mention,
+                role=role.mention
+            ),
+            fields=fields,
+            color="red",
+            thumbnail=str(after.avatar.url) if after.avatar else None
+        )
+@bot.event
+async def on_guild_channel_create(channel):
+    """Log channel creation"""
+    if not isinstance(channel, (discord.TextChannel, discord.VoiceChannel, discord.CategoryChannel)):
+        return
+    fields = [
+        ("📺 Channel", f"{channel.mention} (`{channel.id}`)", True),
+        ("📁 Type", channel.type.name.title(), True),
+        ("📅 Created", f"<t:{int(channel.created_at.timestamp())}:R>", True)
+    ]
+    if hasattr(channel, 'category') and channel.category:
+        fields.append(("📂 Category", channel.category.name, True))
+    await send_log_embed(
+        channel.guild,
+        "channel_create",
+        "📺 Chamber Created",
+        f"A new {channel.type.name} chamber hath been created: {channel.mention}",
+        fields=fields,
+        color="green"
+    )
+@bot.event
+async def on_guild_channel_delete(channel):
+    """Log channel deletion"""
+    if not isinstance(channel, (discord.TextChannel, discord.VoiceChannel, discord.CategoryChannel)):
+        return
+    fields = [
+        ("📺 Channel", f"#{channel.name}` (`{channel.id}`)", True),
+        ("📁 Type", channel.type.name.title(), True)
+    ]
+    if hasattr(channel, 'category') and channel.category:
+        fields.append(("📂 Category", channel.category.name, True))
+    await send_log_embed(
+        channel.guild,
+        "channel_delete",
+        "📺 Chamber Destroyed",
+        f"A {channel.type.name} chamber hath been destroyed: #{channel.name}",
+        fields=fields,
+        color="red"
+    )
+@bot.event
+async def on_guild_role_create(role):
+    """Log role creation"""
+    fields = [
+        ("⚔️ Role", f"{role.mention} (`{role.id}`)", True),
+        ("📊 Color", f"#{role.color.value:06x}" if role.color.value else "None", True),
+        ("📅 Created", f"<t:{int(role.created_at.timestamp())}:R>", True)
+    ]
+    await send_log_embed(
+        role.guild,
+        "role_create",
+        "⚔️ Honor Created",
+        f"A new role hath been created: {role.mention}",
+        fields=fields,
+        color="green"
+    )
+@bot.event
+async def on_guild_role_delete(role):
+    """Log role deletion"""
+    fields = [
+        ("🗡️ Role", f"@{role.name}` (`{role.id}`)", True),
+        ("📊 Color", f"#{role.color.value:06x}" if role.color.value else "None", True)
+    ]
+    await send_log_embed(
+        role.guild,
+        "role_delete",
+        "🗡️ Honor Destroyed",
+        f"A role hath been destroyed: @{role.name}",
+        fields=fields,
+        color="red"
+    )
 # ---------- ENHANCED HELP COMMAND WITH ALL COMMANDS ----------
 @bot.command(name="help")
 @commands.guild_only()
@@ -1145,7 +1123,6 @@ async def _help(ctx):
                 ("help", "Display this royal charter of commands"),
                 ("setlogchannel <channel>", "Set the royal chronicle channel for all logs"),
                 ("psetchannel <channel>", "Set the pillory channel for public shaming"),
-                ("viewmedia <message_id>", "View saved media files from deleted messages"),
             ],
             "⚔️ **Pillory System**": [
                 ("pillory <member> <duration> <reason>", "Place a knave in public shame"),
@@ -1179,7 +1156,6 @@ async def _help(ctx):
                 ("/pillory <member> <duration> <reason>", "Place a knave in public shame"),
                 ("/pbypass <@role1> [@role2]...", "Set roles immune to pillory"),
                 ("/pallow <@role1> [@role2]...", "Set roles allowed to use pillory"),
-                ("/viewmedia <message_id>", "View saved media files from deleted messages"),
             ],
             "⚔️ **Slash Commands - Pillory**": [
                 ("/pbypasslist", "List bypass roles"),
@@ -1207,15 +1183,12 @@ async def _help(ctx):
                 ("Slash Commands", "All traditional commands also work as modern slash commands"),
                 ("Medieval Flair", "All messages feature dramatic royal decree formatting"),
                 ("Royal Seal", "Every embed displays the authentic royal seal for authority"),
-                ("Media Logging", "Images and videos are automatically saved when deleted"),
             ]
         }
-        
         # Create embeds for each page - exactly 10 items per page
         embeds = []
         page_num = 1
         total_pages = sum((len(commands) + 9) // 10 for commands in all_commands.values())
-        
         for category, commands in all_commands.items():
             # Split commands into chunks of 10 for pagination
             for i in range(0, len(commands), 10):
@@ -1234,15 +1207,12 @@ async def _help(ctx):
                 page_num += 1
                 embed.set_footer(text="Use the buttons below to navigate • All commands work with both ! and / prefixes")
                 embeds.append(embed)
-        
         # Send the first page with navigation buttons
         view = HelpView(embeds)
         await ctx.send(embed=embeds[0], view=view)
-        
     except Exception as e:
         print(f"Error in help command: {e}")
         await ctx.send(embed=medieval_response("An error occurred displaying the royal charter!", success=False))
-
 # ---------- ADMIN COMMANDS ----------
 @bot.command(name="setlogchannel")
 @commands.has_permissions(manage_guild=True)
@@ -1269,61 +1239,6 @@ async def set_log_channel_cmd(ctx, channel: discord.TextChannel):
         await channel.send(embed=test_embed)
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error setting chronicle channel: {str(e)}", success=False))
-
-@bot.command(name="viewmedia")
-@commands.has_permissions(manage_messages=True)
-@commands.guild_only()
-async def view_media_cmd(ctx, message_id: int):
-    """View saved media files from a deleted message"""
-    try:
-        with get_db_connection() as db:
-            row = db.execute("""
-            SELECT attachments FROM message_history
-            WHERE message_id=? AND guild_id=?
-            """, (message_id, ctx.guild.id)).fetchone()
-            
-            if not row or not row[0]:
-                return await ctx.send(embed=medieval_response(
-                    "No media files found for that message!",
-                    success=False
-                ))
-            
-            attachments = ast.literal_eval(row[0])
-            media_files = [att for att in attachments if att.get('is_media', False) and att.get('saved_path')]
-            
-            if not media_files:
-                return await ctx.send(embed=medieval_response(
-                    "No saved media files found for that message!",
-                    success=False
-                ))
-            
-            embed = medieval_embed(
-                title="🎥 Saved Media Files",
-                description=f"Found {len(media_files)} saved media file(s):",
-                color_name="blue"
-            )
-            
-            for i, media_file in enumerate(media_files):
-                file_path = Path(MEDIA_FOLDER) / media_file['saved_path']
-                if file_path.exists():
-                    size_mb = file_path.stat().st_size / (1024 * 1024)
-                    embed.add_field(
-                        name=f"File {i+1}: {media_file['filename']}",
-                        value=f"Size: {size_mb:.2f} MB\nPath: {media_file['saved_path']}",
-                        inline=False
-                    )
-                else:
-                    embed.add_field(
-                        name=f"File {i+1}: {media_file['filename']}",
-                        value="⚠️ File not found (may have been deleted)",
-                        inline=False
-                    )
-            
-            await ctx.send(embed=embed)
-            
-    except Exception as e:
-        await ctx.send(embed=medieval_response(f"Error viewing media: {str(e)}", success=False))
-
 @bot.command(name="psetchannel")
 @commands.has_permissions(manage_channels=True)
 @commands.guild_only()
@@ -1338,7 +1253,6 @@ async def set_pillory_channel_cmd(ctx, channel: discord.TextChannel):
         await ctx.send(embed=embed)
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error setting channel: {str(e)}", success=False))
-
 # ---------- PILLORY COMMANDS ----------
 @bot.command(name="pbypass")
 @commands.has_permissions(administrator=True)
@@ -1367,7 +1281,6 @@ async def set_pillory_bypass_cmd(ctx, *roles: discord.Role):
         await ctx.send(embed=embed)
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error setting bypass roles: {str(e)}", success=False))
-
 @bot.command(name="pallow")
 @commands.has_permissions(administrator=True)
 @commands.guild_only()
@@ -1395,7 +1308,6 @@ async def set_pillory_allowed_roles_cmd(ctx, *roles: discord.Role):
         await ctx.send(embed=embed)
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error setting allowed roles: {str(e)}", success=False))
-
 @bot.command(name="pbypasslist")
 @commands.guild_only()
 async def list_pillory_bypass_roles_cmd(ctx):
@@ -1423,7 +1335,6 @@ async def list_pillory_bypass_roles_cmd(ctx):
         await ctx.send(embed=embed)
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error listing bypass roles: {str(e)}", success=False))
-
 @bot.command(name="pallowlist")
 @commands.guild_only()
 async def list_pillory_allowed_roles_cmd(ctx):
@@ -1451,7 +1362,6 @@ async def list_pillory_allowed_roles_cmd(ctx):
         await ctx.send(embed=embed)
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error listing allowed roles: {str(e)}", success=False))
-
 @bot.command(name="pillory")
 @commands.guild_only()
 async def pillory_cmd(ctx, member: discord.Member, duration_minutes: int, *, reason: str):
@@ -1567,7 +1477,6 @@ async def pillory_cmd(ctx, member: discord.Member, duration_minutes: int, *, rea
         ))
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error creating pillory: {str(e)}", success=False))
-
 @bot.command(name="pillories")
 @commands.guild_only()
 async def list_pillories(ctx):
@@ -1601,7 +1510,6 @@ async def list_pillories(ctx):
         await ctx.send(embed=embed)
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error listing pillories: {str(e)}", success=False))
-
 @bot.command(name="pardon")
 @commands.guild_only()
 async def pardon_cmd(ctx, pillory_id: int):
@@ -1676,7 +1584,6 @@ By special dispensation and royal prerogative, {ctx.author.mention} hath granted
         ))
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error granting pardon: {str(e)}", success=False))
-
 # Warning System Commands
 @bot.command(name="warn")
 @commands.guild_only()
@@ -1715,7 +1622,6 @@ async def warn_cmd(ctx, member: discord.Member, *, reason: str):
             pass
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error issuing warning: {str(e)}", success=False))
-
 @bot.command(name="warnings")
 @commands.guild_only()
 async def warnings_cmd(ctx, member: discord.Member = None):
@@ -1755,7 +1661,6 @@ async def warnings_cmd(ctx, member: discord.Member = None):
         await ctx.send(embed=embed)
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error checking warnings: {str(e)}", success=False))
-
 @bot.command(name="clearwarn")
 @commands.guild_only()
 async def clearwarn_cmd(ctx, member: discord.Member):
@@ -1775,7 +1680,6 @@ async def clearwarn_cmd(ctx, member: discord.Member):
         ))
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error clearing warnings: {str(e)}", success=False))
-
 # Moderation Commands
 @bot.command(name="kick")
 @commands.guild_only()
@@ -1814,7 +1718,6 @@ async def kick_cmd(ctx, member: discord.Member, *, reason: str = None):
         ))
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error banishing: {str(e)}", success=False))
-
 @bot.command(name="ban")
 @commands.guild_only()
 async def ban_cmd(ctx, member: discord.Member, *, reason: str = None):
@@ -1852,7 +1755,6 @@ async def ban_cmd(ctx, member: discord.Member, *, reason: str = None):
         ))
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error exiling: {str(e)}", success=False))
-
 @bot.command(name="unban")
 @commands.guild_only()
 async def unban_cmd(ctx, user_id: str, *, reason: str = None):
@@ -1886,7 +1788,6 @@ async def unban_cmd(ctx, user_id: str, *, reason: str = None):
         ))
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error granting pardon: {str(e)}", success=False))
-
 @bot.command(name="mute")
 @commands.guild_only()
 async def mute_cmd(ctx, member: discord.Member, duration_minutes: int, *, reason: str = None):
@@ -1930,7 +1831,6 @@ async def mute_cmd(ctx, member: discord.Member, duration_minutes: int, *, reason
         ))
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error silencing: {str(e)}", success=False))
-
 @bot.command(name="unmute")
 @commands.guild_only()
 async def unmute_cmd(ctx, member: discord.Member, *, reason: str = None):
@@ -1958,7 +1858,6 @@ async def unmute_cmd(ctx, member: discord.Member, *, reason: str = None):
         ))
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error restoring voice: {str(e)}", success=False))
-
 @bot.command(name="purge")
 @commands.guild_only()
 async def purge_cmd(ctx, amount: int):
@@ -1990,7 +1889,6 @@ async def purge_cmd(ctx, amount: int):
         ))
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error cleansing chat: {str(e)}", success=False))
-
 # ---------- CHANNEL LOCK COMMANDS ----------
 @bot.command(name="seal")
 @commands.guild_only()
@@ -2054,7 +1952,6 @@ async def seal_channel_cmd(ctx, *, reason: str = "By royal decree"):
         await ctx.send(embed=embed)
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error sealing chamber: {str(e)}", success=False))
-
 @bot.command(name="unseal")
 @commands.guild_only()
 async def unseal_channel_cmd(ctx, *, reason: str = "By royal mercy"):
@@ -2110,7 +2007,6 @@ async def unseal_channel_cmd(ctx, *, reason: str = "By royal mercy"):
         await ctx.send(embed=embed)
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error unsealing chamber: {str(e)}", success=False))
-
 @bot.command(name="sealed")
 @commands.guild_only()
 async def list_sealed_channels_cmd(ctx):
@@ -2144,7 +2040,6 @@ async def list_sealed_channels_cmd(ctx):
         await ctx.send(embed=embed)
     except Exception as e:
         await ctx.send(embed=medieval_response(f"Error listing sealed chambers: {str(e)}", success=False))
-
 # ---------- SLASH COMMANDS ----------
 @tree.command(name="setlogchannel", description="Set the royal chronicle channel for all server logs")
 @app_commands.describe(channel="The channel for server chronicles")
@@ -2171,20 +2066,6 @@ async def slash_set_log_channel(interaction: discord.Interaction, channel: disco
         await channel.send(embed=test_embed)
     except Exception as e:
         await interaction.followup.send(embed=medieval_response(f"Error setting chronicle channel: {str(e)}", success=False))
-
-@tree.command(name="viewmedia", description="View saved media files from a deleted message")
-@app_commands.describe(message_id="The ID of the message to check")
-@app_commands.guild_only
-async def slash_view_media(interaction: discord.Interaction, message_id: int):
-    await interaction.response.defer()
-    class MockCtx:
-        def __init__(self, interaction):
-            self.author = interaction.user
-            self.guild = interaction.guild
-            self.send = interaction.followup.send
-    ctx = MockCtx(interaction)
-    await view_media_cmd(ctx, message_id)
-
 @tree.command(name="help", description="View the complete royal charter of commands")
 @app_commands.guild_only
 async def slash_help(interaction: discord.Interaction):
@@ -2193,12 +2074,12 @@ async def slash_help(interaction: discord.Interaction):
         # Create comprehensive help embed
         embed = medieval_embed(
             title="📜 The Complete Royal Charter",
-            description=f"{medieval_greeting()}\n\n**🏰 All Commands Available:**\n\nUse `!help` for full paginated experience with ALL commands!\n\n**Quick Reference:**\n`!pillory` - Public shaming system\n`!setlogchannel` - Configure logging\n`!seal/unseal` - Channel locking\n`!warn/warnings` - Warning system\n`!kick/ban/mute` - Moderation tools\n`!viewmedia` - Check saved media files\n\n**✨ Features:**\n• Royal decree formatting on all messages\n• Comprehensive logging system\n• Pillory with dramatic announcements\n• Channel sealing/unsealing\n• Warning system with database\n• Full medieval theming with royal seal\n• Both ! and / command support\n• **Media files saved when deleted**",
+            description=f"{medieval_greeting()}\n\n**🏰 All Commands Available:**\n\nUse `!help` for full paginated experience with ALL commands!\n\n**Quick Reference:**\n`!pillory` - Public shaming system\n`!setlogchannel` - Configure logging\n`!seal/unseal` - Channel locking\n`!warn/warnings` - Warning system\n`!kick/ban/mute` - Moderation tools\n\n**✨ Features:**\n• Royal decree formatting on all messages\n• Comprehensive logging system\n• Pillory with dramatic announcements\n• Channel sealing/unsealing\n• Warning system with database\n• Full medieval theming with royal seal\n• Both ! and / command support",
             color_name="purple"
         )
         embed.add_field(
             name="⚔️ **Key Systems:**",
-            value="**Pillory:** Public shaming with @here announcements\n**Logging:** Complete server activity tracking\n**Moderation:** Kick, ban, mute, purge, warnings\n**Chambers:** Lock/unlock channels with ceremony\n**Media:** Images/videos saved when deleted",
+            value="**Pillory:** Public shaming with @here announcements\n**Logging:** Complete server activity tracking\n**Moderation:** Kick, ban, mute, purge, warnings\n**Chambers:** Lock/unlock channels with ceremony",
             inline=False
         )
         embed.add_field(
@@ -2209,9 +2090,266 @@ async def slash_help(interaction: discord.Interaction):
         await interaction.response.send_message(embed=embed)
     except Exception as e:
         await interaction.response.send_message(embed=medieval_response("Error displaying help!", success=False))
-
-# Add other slash commands here following the same pattern...
-
+@tree.command(name="pillory", description="Place a knave in public shame")
+@app_commands.describe(member="The miscreant to pillory", duration="Duration in minutes", reason="The offense committed")
+@app_commands.guild_only
+async def slash_pillory(interaction: discord.Interaction, member: discord.Member, duration: int, reason: str):
+    await interaction.response.defer()
+    class MockCtx:
+        def __init__(self, interaction):
+            self.author = interaction.user
+            self.guild = interaction.guild
+            self.send = interaction.followup.send
+    ctx = MockCtx(interaction)
+    await pillory_cmd(ctx, member, duration, reason=reason)
+@tree.command(name="pbypass", description="Set roles immune to pillory punishment")
+@app_commands.describe(roles="The roles to grant bypass privilege (mention them)")
+@app_commands.guild_only
+async def slash_pbypass(interaction: discord.Interaction, roles: str):
+    await interaction.response.defer()
+    try:
+        # Parse role mentions from the string input
+        role_ids = []
+        for mention in roles.split():
+            if "<@&" in mention and ">" in mention:
+                try:
+                    role_id = int(mention.strip("<@&>"))
+                    role_ids.append(role_id)
+                except ValueError:
+                    continue
+        if not role_ids:
+            return await interaction.followup.send(embed=medieval_response(
+                "Please mention valid roles!",
+                success=False
+            ))
+        discord_roles = []
+        for role_id in role_ids:
+            role = interaction.guild.get_role(role_id)
+            if role:
+                discord_roles.append(role)
+        if not discord_roles:
+            return await interaction.followup.send(embed=medieval_response(
+                "No valid roles found!",
+                success=False
+            ))
+        # Set bypass roles
+        role_ids = [r.id for r in discord_roles]
+        set_pillory_bypass_roles(interaction.guild.id, role_ids)
+        role_mentions = " ".join(r.mention for r in discord_roles)
+        embed = medieval_embed(
+            title="👑 Royal Bypass Privilege",
+            description=f"The following roles now possess royal immunity: {role_mentions}",
+            color_name="purple"
+        )
+        embed.add_field(
+            name="⚔️ Privilege Granted",
+            value="Holders of these roles shall never face the shame of the pillory!",
+            inline=False
+        )
+        await interaction.followup.send(embed=embed)
+    except Exception as e:
+        await interaction.followup.send(embed=medieval_response(f"Error setting bypass roles: {str(e)}", success=False))
+@tree.command(name="pallow", description="Set roles allowed to use pillory commands")
+@app_commands.describe(roles="The roles to grant pillory privileges (mention them)")
+@app_commands.guild_only
+async def slash_pallow(interaction: discord.Interaction, roles: str):
+    await interaction.response.defer()
+    try:
+        # Parse role mentions from the string input
+        role_ids = []
+        for mention in roles.split():
+            if "<@&" in mention and ">" in mention:
+                try:
+                    role_id = int(mention.strip("<@&>"))
+                    role_ids.append(role_id)
+                except ValueError:
+                    continue
+        if not role_ids:
+            return await interaction.followup.send(embed=medieval_response(
+                "Please mention valid roles!",
+                success=False
+            ))
+        discord_roles = []
+        for role_id in role_ids:
+            role = interaction.guild.get_role(role_id)
+            if role:
+                discord_roles.append(role)
+        if not discord_roles:
+            return await interaction.followup.send(embed=medieval_response(
+                "No valid roles found!",
+                success=False
+            ))
+        # Set allowed roles
+        role_ids = [r.id for r in discord_roles]
+        set_pillory_allowed_roles(interaction.guild.id, role_ids)
+        role_mentions = " ".join(r.mention for r in discord_roles)
+        embed = medieval_embed(
+            title="⚔️ Royal Pillory Privileges",
+            description=f"The following roles now command the power of the pillory: {role_mentions}",
+            color_name="purple"
+        )
+        embed.add_field(
+            name="🏰 Authority Bestowed",
+            value="Only these chosen roles may condemn souls to public shame!",
+            inline=False
+        )
+        await interaction.followup.send(embed=embed)
+    except Exception as e:
+        await interaction.followup.send(embed=medieval_response(f"Error setting allowed roles: {str(e)}", success=False))
+@tree.command(name="pbypasslist", description="List roles with pillory bypass privilege")
+@app_commands.guild_only
+async def slash_pbypasslist(interaction: discord.Interaction):
+    await interaction.response.defer()
+    class MockCtx:
+        def __init__(self, interaction):
+            self.author = interaction.user
+            self.guild = interaction.guild
+            self.send = interaction.followup.send
+    ctx = MockCtx(interaction)
+    await list_pillory_bypass_roles_cmd(ctx)
+@tree.command(name="pallowlist", description="List roles allowed to use pillory commands")
+@app_commands.guild_only
+async def slash_pallowlist(interaction: discord.Interaction):
+    await interaction.response.defer()
+    class MockCtx:
+        def __init__(self, interaction):
+            self.author = interaction.user
+            self.guild = interaction.guild
+            self.send = interaction.followup.send
+    ctx = MockCtx(interaction)
+    await list_pillory_allowed_roles_cmd(ctx)
+@tree.command(name="pillories", description="View active pillories in the realm")
+@app_commands.guild_only
+async def slash_pillories(interaction: discord.Interaction):
+    await interaction.response.defer()
+    class MockCtx:
+        def __init__(self, interaction):
+            self.author = interaction.user
+            self.guild = interaction.guild
+            self.send = interaction.followup.send
+    ctx = MockCtx(interaction)
+    await list_pillories(ctx)
+@tree.command(name="pardon", description="Show mercy and end a pillory early")
+@app_commands.describe(pillory_id="The ID of the pillory to end")
+@app_commands.guild_only
+async def slash_pardon(interaction: discord.Interaction, pillory_id: int):
+    await interaction.response.defer()
+    class MockCtx:
+        def __init__(self, interaction):
+            self.author = interaction.user
+            self.guild = interaction.guild
+            self.send = interaction.followup.send
+    ctx = MockCtx(interaction)
+    await pardon_cmd(ctx, pillory_id)
+@tree.command(name="warn", description="Issue a warning to a miscreant")
+@app_commands.describe(member="The member to warn", reason="The reason for the warning")
+@app_commands.guild_only
+async def slash_warn(interaction: discord.Interaction, member: discord.Member, reason: str):
+    await interaction.response.defer()
+    class MockCtx:
+        def __init__(self, interaction):
+            self.author = interaction.user
+            self.guild = interaction.guild
+            self.send = interaction.followup.send
+    ctx = MockCtx(interaction)
+    await warn_cmd(ctx, member, reason=reason)
+@tree.command(name="warnings", description="Check warnings for a subject")
+@app_commands.describe(member="The member to check (optional)")
+@app_commands.guild_only
+async def slash_warnings(interaction: discord.Interaction, member: discord.Member = None):
+    await interaction.response.defer()
+    class MockCtx:
+        def __init__(self, interaction):
+            self.author = interaction.user
+            self.guild = interaction.guild
+            self.send = interaction.followup.send
+    ctx = MockCtx(interaction)
+    await warnings_cmd(ctx, member=member)
+@tree.command(name="kick", description="Banish a knave from the realm")
+@app_commands.describe(member="The member to kick", reason="The reason for banishment")
+@app_commands.guild_only
+async def slash_kick(interaction: discord.Interaction, member: discord.Member, reason: str = None):
+    await interaction.response.defer()
+    class MockCtx:
+        def __init__(self, interaction):
+            self.author = interaction.user
+            self.guild = interaction.guild
+            self.send = interaction.followup.send
+    ctx = MockCtx(interaction)
+    await kick_cmd(ctx, member, reason=reason)
+@tree.command(name="ban", description="Permanently exile a criminal")
+@app_commands.describe(member="The member to ban", reason="The reason for exile")
+@app_commands.guild_only
+async def slash_ban(interaction: discord.Interaction, member: discord.Member, reason: str = None):
+    await interaction.response.defer()
+    class MockCtx:
+        def __init__(self, interaction):
+            self.author = interaction.user
+            self.guild = interaction.guild
+            self.send = interaction.followup.send
+    ctx = MockCtx(interaction)
+    await ban_cmd(ctx, member, reason=reason)
+@tree.command(name="mute", description="Silence a chatterer for a time")
+@app_commands.describe(member="The member to mute", duration="Duration in minutes", reason="The reason for silence")
+@app_commands.guild_only
+async def slash_mute(interaction: discord.Interaction, member: discord.Member, duration: int, reason: str = None):
+    await interaction.response.defer()
+    class MockCtx:
+        def __init__(self, interaction):
+            self.author = interaction.user
+            self.guild = interaction.guild
+            self.send = interaction.followup.send
+    ctx = MockCtx(interaction)
+    await mute_cmd(ctx, member, duration, reason=reason)
+@tree.command(name="purge", description="Cleanse the chat of messages")
+@app_commands.describe(amount="Number of messages to purge (1-100)")
+@app_commands.guild_only
+async def slash_purge(interaction: discord.Interaction, amount: int):
+    await interaction.response.defer()
+    class MockCtx:
+        def __init__(self, interaction):
+            self.author = interaction.user
+            self.guild = interaction.guild
+            self.send = interaction.followup.send
+    ctx = MockCtx(interaction)
+    await purge_cmd(ctx, amount)
+@tree.command(name="seal", description="🔒 Seal a channel to prevent sending messages")
+@app_commands.describe(reason="The reason for sealing this chamber")
+@app_commands.guild_only
+async def slash_seal(interaction: discord.Interaction, reason: str = "By royal decree"):
+    await interaction.response.defer()
+    class MockCtx:
+        def __init__(self, interaction):
+            self.author = interaction.user
+            self.guild = interaction.guild
+            self.channel = interaction.channel
+            self.send = interaction.followup.send
+    ctx = MockCtx(interaction)
+    await seal_channel_cmd(ctx, reason=reason)
+@tree.command(name="unseal", description="🔓 Unseal a channel to restore sending messages")
+@app_commands.describe(reason="The reason for unsealing this chamber")
+@app_commands.guild_only
+async def slash_unseal(interaction: discord.Interaction, reason: str = "By royal mercy"):
+    await interaction.response.defer()
+    class MockCtx:
+        def __init__(self, interaction):
+            self.author = interaction.user
+            self.guild = interaction.guild
+            self.channel = interaction.channel
+            self.send = interaction.followup.send
+    ctx = MockCtx(interaction)
+    await unseal_channel_cmd(ctx, reason=reason)
+@tree.command(name="sealed", description="📋 View all sealed channels in the realm")
+@app_commands.guild_only
+async def slash_sealed(interaction: discord.Interaction):
+    await interaction.response.defer()
+    class MockCtx:
+        def __init__(self, interaction):
+            self.author = interaction.user
+            self.guild = interaction.guild
+            self.send = interaction.followup.send
+    ctx = MockCtx(interaction)
+    await list_sealed_channels_cmd(ctx)
 # ---------- ON READY ----------
 @bot.event
 async def on_ready():
@@ -2223,7 +2361,6 @@ async def on_ready():
         print('🔗 Slash commands loaded!')
         print('📖 Comprehensive help command with ALL commands!')
         print('👑 Royal Seal image integrated for all proclamations!')
-        print('🎥 Media file saving system activated!')
         print('------')
         # Sync slash commands
         try:
@@ -2236,7 +2373,6 @@ async def on_ready():
             check_pillories.start()
     except Exception as e:
         print(f"Error in on_ready: {e}")
-
 # ---------- MESSAGE STORAGE ----------
 @bot.event
 async def on_message(message):
@@ -2244,7 +2380,6 @@ async def on_message(message):
     if not message.author.bot and message.guild:
         store_message(message)
     await bot.process_commands(message)
-
 # ---------- ENHANCED ERROR HANDLER ----------
 @bot.event
 async def on_command_error(ctx, error):
@@ -2294,7 +2429,6 @@ async def on_command_error(ctx, error):
             "An unforeseen calamity hath occurred! The royal scribes have been notified.",
             success=False
         ))
-
 @tree.error
 async def on_app_command_error(interaction: discord.Interaction, error):
     """Enhanced slash command error handling"""
@@ -2316,7 +2450,6 @@ async def on_app_command_error(interaction: discord.Interaction, error):
             "An unforeseen calamity hath occurred!",
             ephemeral=True
         )
-
 # ---------- RUN ----------
 app = flask.Flask(__name__)
 
@@ -2337,7 +2470,6 @@ if __name__ == "__main__":
         print("🔗 Slash commands loaded!")
         print("📖 Comprehensive help command with ALL commands!")
         print("👑 Royal Seal image integrated for all proclamations!")
-        print("🎥 Media file saving system activated!")
         print("🏰 Starting Flask keep-alive server and Discord bot...")
 
         # Start Flask in a separate thread
